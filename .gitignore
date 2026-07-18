@@ -1,0 +1,11 @@
+.DS_Store
+
+# Local-only mail/server configuration.
+contact-config.php
+
+# Local backups and temporary exports.
+backups/
+*.log
+
+# Composer dependencies are installed from composer.json.
+vendor/
