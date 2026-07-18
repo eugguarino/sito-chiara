@@ -103,10 +103,12 @@ a {
 }
 
 .hero {
+  align-items: center;
   display: grid;
   gap: clamp(28px, 5vw, 64px);
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-  padding: clamp(48px, 7vw, 92px) clamp(18px, 4vw, 54px);
+  min-height: calc(100vh - 86px);
+  padding: clamp(28px, 5vw, 64px) clamp(18px, 4vw, 54px);
 }
 
 .hero-copy {
@@ -226,26 +228,27 @@ h3 {
 }
 
 .hero-photo-pair {
-  align-items: center;
+  align-items: stretch;
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: min(620px, calc(100vh - 190px));
   min-width: 0;
   width: 100%;
 }
 
 .hero-photo-pair img {
+  aspect-ratio: 9 / 14;
   background: var(--paper-soft);
   border-radius: 8px;
   box-shadow: var(--shadow);
-  height: auto;
+  height: 100%;
   justify-self: center;
-  max-height: 560px;
   max-width: 100%;
   min-width: 0;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
-  width: auto;
+  width: 100%;
 }
 
 .hero-media figcaption {
