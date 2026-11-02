@@ -2,10 +2,10 @@
   --paper: #f7f1ea;
   --paper-soft: #fffaf4;
   --ink: #201b18;
-  --muted: #726660;
+  --muted: #332a26;
   --line: #d8cbc0;
   --red: #a93837;
-  --red-dark: #7f2628;
+  --red-dark: #60191b;
   --blue: #173d5a;
   --shadow: 0 22px 70px rgba(42, 30, 24, 0.12);
 }
@@ -212,7 +212,7 @@ h3 {
 }
 
 .trust-list li {
-  border: 1px solid var(--line);
+  border: 1px solid #66514a;
   border-radius: 999px;
   padding: 8px 12px;
 }
@@ -227,25 +227,12 @@ h3 {
   width: 100%;
 }
 
-.hero-photo-pair {
-  align-items: stretch;
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  max-height: min(620px, calc(100vh - 190px));
-  min-width: 0;
-  width: 100%;
-}
-
-.hero-photo-pair img {
-  aspect-ratio: 9 / 14;
+.hero-photo {
+  aspect-ratio: 4 / 3;
   background: var(--paper-soft);
   border-radius: 8px;
   box-shadow: var(--shadow);
-  height: 100%;
-  justify-self: center;
-  max-width: 100%;
-  min-width: 0;
+  max-height: min(620px, calc(100vh - 190px));
   object-fit: cover;
   object-position: center;
   width: 100%;
@@ -320,7 +307,7 @@ section {
 .service-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .service-grid article,

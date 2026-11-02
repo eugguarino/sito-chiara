@@ -33,3 +33,5 @@ jobs:
             **/node_modules/**
             backups/**
             contact-config.php
+            admin-config.php
+            content-data.php

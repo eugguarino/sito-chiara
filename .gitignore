@@ -9,3 +9,7 @@ backups/
 
 # Composer dependencies are installed from composer.json.
 vendor/
+
+# Admin credentials and content edited on the server.
+admin-config.php
+content-data.php

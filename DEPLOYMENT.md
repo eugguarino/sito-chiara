@@ -41,3 +41,13 @@ composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 ```
 
 Questo ricrea la cartella `vendor/` durante la pubblicazione, senza versionarla su GitHub.
+
+## Pannello di gestione contenuti
+
+Il pannello si trova all'indirizzo `/admin.php` e richiede HTTPS. Per abilitarlo, crea sul server il file `admin-config.php` partendo da `admin-config.example.php`. Genera l'hash di una password lunga e unica con il comando seguente, da terminale, e copia il risultato nel valore `password_hash`:
+
+```sh
+php -r 'echo password_hash(readline("Password: "), PASSWORD_DEFAULT), PHP_EOL;'
+```
+
+Non inserire la password in chiaro nel file. Il processo PHP deve poter scrivere nella cartella del sito per creare e aggiornare `content-data.php`. Questo file e la configurazione del pannello sono esclusi dal deploy FTP e da Git: conserva una copia di sicurezza privata di entrambi. Le modifiche sono pubblicate quando si preme «Salva modifiche»; possono essere annullate prima di salvare ricaricando la pagina. Il pannello consente di modificare i testi semplici e rimuovere o aggiungere copie degli elementi originali nei gruppi esistenti; non carica nuove immagini o documenti. Le modifiche apportate tramite il pannello restano sul server e non aggiornano i file locali o Git. Se in seguito cambia la struttura della pagina, verificare la corrispondenza dei contenuti modificati prima di pubblicare.
