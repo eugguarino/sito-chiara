@@ -673,3 +673,7 @@ textarea:focus {
     column-count: 1;
   }
 }
+
+[hidden] {
+  display: none !important;
+}

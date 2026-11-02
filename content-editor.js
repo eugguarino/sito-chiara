@@ -36,15 +36,73 @@
     setTexts(globalLeaves(), data.texts);
   };
   collections.forEach((group, i) => [...group.children].forEach((el, j) => { el.dataset.cmsSource = j; }));
-  window.siteContentEditor = {
-    collections, templates, globalLeaves, fieldsFor, addItem,
-    serialize: () => ({
-      texts: globalLeaves().map(el => el.textContent.trim()),
-      collections: collections.map(group => [...group.children].map(item => ({
-        source: Number(item.dataset.cmsSource), texts: fieldsFor(item).map(el => el.textContent.trim())
-      })))
-    })
+  let baseline;
+  const operations = [];
+  const snapshot = () => ({
+    texts: globalLeaves().map(el => el.textContent.trim()),
+    collections: collections.map(group => [...group.children].map(item => ({
+      source: Number(item.dataset.cmsSource), texts: fieldsFor(item).map(el => el.textContent.trim())
+    })))
+  });
+  // Paths refer to the DOM resulting from the preceding operations, in order.
+  const pathFor = el => {
+    const path = [];
+    while (el && el !== document.body) {
+      const parent = el.parentElement;
+      if (!parent) return null;
+      path.unshift([...parent.children].indexOf(el));
+      el = parent;
+    }
+    return el === document.body ? path : null;
+  };
+  const resolve = path => {
+    if (!Array.isArray(path) || path.length > 40) return null;
+    return path.reduce((el, n) => el && Number.isInteger(n) && n >= 0 ? el.children[n] : null, document.body);
+  };
+  const validUrl = value => {
+    try { const url = new URL(value, document.baseURI); return ['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol); }
+    catch { return false; }
+  };
+  const perform = op => {
+    const el = resolve(op.path);
+    if (!el || !el.closest('header,main,footer')) return false;
+    if (op.type === 'hide') el.hidden = true;
+    else if (op.type === 'show') el.hidden = false;
+    else if (op.type === 'text' && !el.children.length && typeof op.value === 'string') el.textContent = op.value;
+    else if (op.type === 'attribute' && typeof op.value === 'string' &&
+      ((op.name === 'alt' && el.tagName === 'IMG') ||
+       (op.name === 'src' && el.tagName === 'IMG' && validUrl(op.value)) ||
+       (op.name === 'href' && el.tagName === 'A' && validUrl(op.value)))) el.setAttribute(op.name, op.value);
+    else if (op.type === 'duplicate') {
+      const copy = el.cloneNode(true);
+      copy.hidden = false;
+      // Duplicate IDs would break links and form labels; remap internal references.
+      const idMap = new Map();
+      [copy, ...copy.querySelectorAll('[id]')].forEach(node => {
+        if (!node.id) return;
+        const old = node.id;
+        const next = `${old}-copia-${operations.length}`;
+        node.id = next; idMap.set(old, next);
+      });
+      [copy, ...copy.querySelectorAll('*')].forEach(node => {
+        ['for', 'aria-labelledby', 'aria-describedby', 'aria-controls'].forEach(attr => {
+          if (node.hasAttribute(attr)) node.setAttribute(attr, node.getAttribute(attr).split(/\s+/).map(id => idMap.get(id) || id).join(' '));
+        });
+        const href = node.getAttribute('href');
+        if (href && href.startsWith('#') && idMap.has(href.slice(1))) node.setAttribute('href', `#${idMap.get(href.slice(1))}`);
+      });
+      el.after(copy);
+    } else return false;
+    return true;
+  };
+  const record = op => { if (!perform(op)) return false; operations.push(op); return true; };
+  window.siteContentEditor = { pathFor, record,
+    serialize: () => ({...baseline, operations})
   };
   fetch('content.php', {cache: 'no-store'}).then(response => { if (!response.ok) throw new Error('Caricamento non riuscito'); return response.json(); })
-    .then(apply).catch(() => { window.siteContentEditor.loadFailed = true; }).finally(() => { window.siteContentEditor.ready = true; window.dispatchEvent(new Event('site-content-ready')); });
+    .then(data => {
+      apply(data);
+      baseline = snapshot();
+      if (Array.isArray(data.operations)) data.operations.forEach(record);
+    }).catch(() => { window.siteContentEditor.loadFailed = true; }).finally(() => { window.siteContentEditor.ready = true; window.dispatchEvent(new Event('site-content-ready')); });
 })();
