@@ -3,9 +3,17 @@
   const editor = document.querySelector('#editor');
   const status = document.querySelector('#status');
   const selector = 'section,header,footer,nav,div,article,figure,figcaption,ul,ol,h1,h2,h3,h4,p,li,a,button,img,form,label,select,option,input,textarea,span,strong';
-  let api, doc, selected, dirty = false, revision = 0, pending = null, timer;
+  let api, doc, selected, dirty = false, revision = 0, pending = null, pendingLink = null, timer;
   const markDirty = () => { dirty = true; revision++; status.textContent = 'Modifiche non salvate'; };
-  const flush = () => { clearTimeout(timer); if (pending) { const fn = pending; pending = null; fn(); } };
+  const flush = () => {
+    clearTimeout(timer);
+    if (pending) { const fn = pending; pending = null; fn(); }
+    if (pendingLink) {
+      if (!pendingLink()) return false;
+      pendingLink = null;
+    }
+    return true;
+  };
   const describe = el => {
     const types = {SECTION:'Sezione', HEADER:'Intestazione', FOOTER:'Piè di pagina', ARTICLE:'Scheda', FIGURE:'Immagine con didascalia', IMG:'Immagine', BUTTON:'Pulsante', A:'Link', P:'Testo', LI:'Elemento elenco', FORM:'Modulo', H1:'Titolo', H2:'Titolo', H3:'Titolo', H4:'Titolo'};
     const label = types[el.tagName] || el.tagName.toLowerCase();
@@ -23,7 +31,7 @@
     if (el && !el.hidden) el.classList.add('cms-preview-selected');
   };
   const render = el => {
-    flush();
+    if (!flush()) return;
     selected = el || null;
     highlight(selected);
     editor.replaceChildren();
@@ -46,7 +54,7 @@
     const panel = document.createElement('div'); panel.className = 'card'; editor.append(panel);
     const title = document.createElement('h3'); title.textContent = describe(selected); panel.append(title);
     if (selected.hidden) { const note = document.createElement('p'); note.textContent = 'Questo elemento è stato rimosso dalla pagina. Puoi ripristinarlo.'; panel.append(note); }
-    const textField = (labelText, value, onSave, live) => {
+    const textField = (labelText, value, onSave, live, automaticLink = false) => {
       const label = document.createElement('label'); label.textContent = labelText;
       const input = document.createElement('textarea'); input.value = value; input.rows = value.length > 90 ? 5 : 2; label.append(input); panel.append(label);
       if (live) {
@@ -59,6 +67,13 @@
           pending = () => onSave(target, next);
           timer = setTimeout(flush, 350);
         });
+      } else if (automaticLink) {
+        input.addEventListener('input', () => {
+          const target = selected;
+          pendingLink = () => onSave(target, input.value);
+          markDirty();
+        });
+        input.addEventListener('blur', flush);
       } else {
         const apply = document.createElement('button'); apply.type = 'button'; apply.textContent = 'Aggiorna anteprima';
         apply.addEventListener('click', () => { flush(); if (onSave(selected, input.value)) render(selected); }); panel.append(apply);
@@ -69,7 +84,7 @@
       textField('Indirizzo immagine', selected.getAttribute('src') || '', (target, value) => perform(target, 'attribute', value, 'src'));
       textField('Descrizione immagine', selected.getAttribute('alt') || '', (target, value) => perform(target, 'attribute', value, 'alt'));
     }
-    if (selected.tagName === 'A') textField('Destinazione del link', selected.getAttribute('href') || '', (target, value) => perform(target, 'attribute', value, 'href'));
+    if (selected.tagName === 'A') textField('Destinazione del link', selected.getAttribute('href') || '', (target, value) => perform(target, 'attribute', value, 'href'), false, true);
     const actions = document.createElement('div'); actions.className = 'item-actions';
     const duplicate = document.createElement('button'); duplicate.type = 'button'; duplicate.textContent = 'Duplica';
     duplicate.addEventListener('click', () => { flush(); highlight(null); if (perform(selected, 'duplicate')) render(selected.nextElementSibling); });
@@ -96,7 +111,8 @@
   });
   document.querySelector('#save').addEventListener('click', async () => {
     if (!api) return;
-    flush(); const savingRevision = revision; status.textContent = 'Salvataggio…';
+    if (!flush()) return;
+    const savingRevision = revision; status.textContent = 'Salvataggio…';
     const form = new FormData(); form.set('action', 'save'); form.set('csrf', document.querySelector('#csrf').value); form.set('content', JSON.stringify(api.serialize()));
     try {
       const response = await fetch('admin.php', {method: 'POST', body: form}); const result = await response.json();
